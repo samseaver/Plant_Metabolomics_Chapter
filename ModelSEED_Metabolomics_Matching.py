@@ -68,9 +68,50 @@ for line in io.open(File):
 
 #Retrieve ModelSEEDDatabase searchnames
 MSD_Searchnames = _retrieve_ModelSEEDDatabase_searchnames()
-#print MSD_Searchnames
 for cpd in Cpd_Searchnames.keys():
-    if(Cpd_Searchnames[cpd] in MSD_Searchnames):
-        print "Found: ",cpd,Cpd_Searchnames[cpd],MSD_Searchnames[Cpd_Searchnames[cpd]]
-    else:
-        print "Not Found: ",cpd,Cpd_Searchnames[cpd]
+    searchname = Cpd_Searchnames[cpd]
+
+    Found=0
+    if(searchname in MSD_Searchnames):
+        print "Found: ",cpd,searchname,MSD_Searchnames[searchname]
+        Found=1
+
+    if(Found==0):
+
+        #Attempt to change the searchname to find a possible common interpretation
+        if(";" in cpd or "/" in cpd):
+            for split_searchname in re.split('[;/]', cpd):
+                split_searchname.strip()
+                split_searchname = _searchname(split_searchname)
+                if(split_searchname in MSD_Searchnames):
+                    print "Found: ",cpd,split_searchname,MSD_Searchnames[split_searchname]
+                    Found=1
+                    break
+                else:
+                    Found = 0
+    if(Found==0):
+        #Attempt to recognize acids
+        if(searchname.endswith('ate')):
+            searchname = searchname.replace('ate','icacid')
+            if(searchname in MSD_Searchnames):
+                Found=1
+                
+        if(searchname.endswith('icacid')):
+            searchname = searchname.replace('icacid','ate')
+            if(searchname in MSD_Searchnames):
+                Found=1
+
+    if(Found==0):
+        #Attempt to recognize geometric isomers
+        if(searchname.startswith('trans')):
+            searchname = searchname.replace('trans','')
+            if(searchname in MSD_Searchnames):
+                Found=1
+
+        if(searchname.startswith('cis')):
+            searchname = searchname.replace('cis','')
+            if(searchname in MSD_Searchnames):
+                Found=1
+
+    if(Found==0):
+        print "Not Found: ",cpd,searchname
