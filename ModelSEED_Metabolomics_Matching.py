@@ -4,7 +4,7 @@ import sys,os.path,mimetypes,re,ssl,urllib2,io
 def _retrieve_ModelSEEDDatabase_searchnames():
 
     context = ssl._create_unverified_context()
-    File = urllib2.urlopen('https://raw.githubusercontent.com/ModelSEED/ModelSEEDDatabase/master/Aliases/searchname.aliases', context=context)
+    File = urllib2.urlopen('https://raw.githubusercontent.com/ModelSEED/ModelSEEDDatabase/v0.1/Aliases/searchname.aliases', context=context)
 
     ModelSEEDDatabase_Searchnames = dict()
     for line in File.readlines():
