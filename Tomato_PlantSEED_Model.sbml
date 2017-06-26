@@ -27982,7 +27982,6 @@
 <speciesReference species="cpd00241_c0" stoichiometry="0.026"/>
 <speciesReference species="cpd00357_c0" stoichiometry="0.03"/>
 <speciesReference species="cpd19001_c0" stoichiometry="1.59"/>
-<speciesReference species="cpd00163_c0" stoichiometry="0.766"/>
 <speciesReference species="cpd00214_c0" stoichiometry="0.329"/>
 <speciesReference species="cpd00604_c0" stoichiometry="0.55"/>
 <speciesReference species="cpd00002_c0" stoichiometry="30"/>
@@ -27991,7 +27990,6 @@
 <listOfProducts>
 <speciesReference species="cpd11416_c0" stoichiometry="1"/>
 <speciesReference species="cpd00012_c0" stoichiometry="0.218"/>
-<speciesReference species="cpd00014_c0" stoichiometry="0.766"/>
 <speciesReference species="cpd00008_c0" stoichiometry="30"/>
 <speciesReference species="cpd00009_c0" stoichiometry="30"/>
 <speciesReference species="cpd00067_c0" stoichiometry="30"/>
