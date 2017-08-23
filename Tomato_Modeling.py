@@ -147,7 +147,7 @@ ex_fluxes=def_ex_fluxes[['EX_cpd00001_e0',
 ##
 #   
 data = []
-with open("matched_compounds.txt") as file:
+with open("Matched_Metabolomics_Data.txt") as file:
     for line in file:
         list = [element.strip() for element in line.split("\t")]
         data.append(list)        
