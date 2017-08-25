@@ -195,7 +195,7 @@ for j in range(3,8): # flesh only
                 
             # generate overall constraint the for overall sink flux through metabolite       
             for i in range(0,len(sink_rxn_list)):
-                constraint_expression=eval("context_model_tmp.reactions."+ str(sink_rxn_list[i]) +".flux_expression")
+                constraint_expression=eval("context_model_tmp.reactions."+ sink_rxn_list[i].id +".flux_expression")
                 if (i==0):
                     constraints_all= constraint_expression
                 else:
