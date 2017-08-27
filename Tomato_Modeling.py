@@ -147,7 +147,7 @@ ex_fluxes=def_ex_fluxes[['EX_cpd00001_e0',
 ##
 #   
 data = []
-with open("matched_compounds.txt") as file:
+with open("Matched_Metabolomics_Data.txt") as file:
     for line in file:
         list = [element.strip() for element in line.split("\t")]
         data.append(list)        
@@ -195,7 +195,7 @@ for j in range(3,8): # flesh only
                 
             # generate overall constraint the for overall sink flux through metabolite       
             for i in range(0,len(sink_rxn_list)):
-                constraint_expression=eval("context_model_tmp.reactions."+ str(sink_rxn_list[i]) +".flux_expression")
+                constraint_expression=eval("context_model_tmp.reactions."+ sink_rxn_list[i].id +".flux_expression")
                 if (i==0):
                     constraints_all= constraint_expression
                 else:
@@ -364,6 +364,8 @@ diff=abs(cm_1_fluxes-cm_2_fluxes)
 order=[i[0] for i in sorted(enumerate(abs(cm_1_fluxes-cm_2_fluxes)), reverse=True, key=lambda x:x[1])]
 
 # print most changing reactions
+print("print most changing reactions:")
+print("\n")
 print("Reaction ID","\t", "Reaction Name","\t","Flux 1","\t","Flux 2")
 print("---------------------------------------------------------------")
 for i in range(0,50):
