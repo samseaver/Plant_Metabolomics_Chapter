@@ -3,11 +3,11 @@
 Created on Tue May 23 13:17:41 2017
 @author: Nadine Toepfer
 """
-### 0. Run this first: import modules and define functions  
+### 0. Importing modules and defining functions
 ##
 #
-
 from __future__ import print_function
+print("0. Importing modules and defining functions.")
 import cobra
 import pandas as pd
 import numpy as np
@@ -28,91 +28,115 @@ def _process_flux_dataframe(flux_dataframe, threshold, floatfmt):
     flux_dataframe.flux = \
         flux_dataframe.flux.abs().astype('float')
     return flux_dataframe
+print("Finished: 0. Importing modules and defining functions.")
 
-### 1. read generic tomato model
+print("##########################################################\n")
+
+### 1. Reading PlantSEED tomato model
 ##
 #
-print("Reading the tomato model...")
+print("1. Reading PlantSEED tomato model.")
 model=cobra.io.read_sbml_model("Tomato_PlantSEED_Model.sbml")
-# set solver, this can be changed to e.g. GUROBI or glpk
-model.solver = "cplex"
+print("Finished: 1. Reading PlantSEED tomato model.")
 
+print("##########################################################\n")
 
-### 2. print basic model properties
+### 2. Printing basic model properties
 ##
 #
-print("number of reactions: %i" % (len(model.reactions)))
-print("number of metabolites: %i" % (len(model.metabolites)))
-print("number of genes: %i \n" % (len(model.genes)))
+print("2. Printing basic model properties.")
+print("Number of reactions: %i" % (len(model.reactions)))
+print("Number of metabolites: %i" % (len(model.metabolites)))
+print("Number of genes: %i" % (len(model.genes)))
+print("Finished: 2. Printing basic model properties.")
 
-### 3. print exchange reactions
+print("##########################################################\n")
+
+### 3. Printing exchange reactions
 ##
 #
-print("Exchange Reactions: \n")
+print("3. Printing exchange reactions.")
+print("---------------------------------------------------------------")
 print("Reaction ID","\t", "Reaction Name","\t","Lower Bound","\t","Upper Bound")
 print("---------------------------------------------------------------")
 for x in model.exchanges:
     print(x.id,"\t", x.name,"\t",x.lower_bound,"\t",x.upper_bound)
-print("\n")
+print("Finished: 3. Printing exchange reactions.")
 
-### 4. print biomass reaction
+print("##########################################################\n")
+
+### 4. Printing biomass composition
 ##
 #   
-print("Biomass composition: \n") 
-bio=model.reactions.get_by_id("bio1")   
+print("4. Printing biomass composition.")
+# get biomass
+bio=model.reactions.get_by_id("bio1")
+
+# get biomass coefficients
 coeffs=bio.get_coefficients(bio.reactants)
+
+print("-------------------------------------")
 print("Metabolite name","\t","coefficient")
 print("-------------------------------------")
 for i in range(0,len(coeffs)):
     print(bio.reactants[i].name,"\t",coeffs[i])
-print("\n")
-    
-### 5. run FBA
+print("Finished: 4. Printing biomass composition.")
+
+print("##########################################################\n")
+
+### 5. Running initial FBA.
 ##
 #  
-print("Run test FBA: \n")    
+print("5. Running initial FBA.")
+# set solver, this can be changed to e.g. GUROBI or glpk
+model.solver = "glpk"
+
+# set objective, which is the biomass reaction
 model.optimize(new_objective=bio)
+
+# run FBA, optimizing generation of biomass
 sol = model.optimize()
+
+# print summary of results
 model.summary()
-print("\n")
+print("Finished: 5. Running initial FBA.")
+
+print("##########################################################\n")
 
 ### 6.change uptakes and run FBA
 ##
 #
-print("Change uptake rates: \n")  
-print(model.exchanges[6].name) #  urea
-model.exchanges[6].lower_bound=0
-print("New lower exchange boundary:",model.exchanges[6].lower_bound)
+print("6. Changing rates of exchange and re-running FBA.")
+Metabolites_to_Fix={"Urea":6,"Sucrose":11,"Light":14,"Biomass":16}
+for met in Metabolites_to_Fix.keys():
+      met_index = Metabolites_to_Fix[met]
+      if(met == "Sucrose"):
+          # prevents sucrose from being biosynthesized
+          model.exchanges[met_index].upper_bound=0
+          print("New upper exchange boundary for "+met+" ("+model.exchanges[met_index].name+"):",model.exchanges[met_index].upper_bound)
+      else:
+          # prevents urea, light, and biomass from being consumed
+          model.exchanges[met_index].lower_bound=0
+          print("New lower exchange boundary for "+met+" ("+model.exchanges[met_index].name+"):",model.exchanges[met_index].lower_bound)
 
-print(model.exchanges[11].name) # sucrose
-model.exchanges[11].upper_bound=0 # not out
-print("New lower exchange boundary:",model.exchanges[11].upper_bound)
-
-print(model.exchanges[14].name) # light
-model.exchanges[14].lower_bound=0
-print("New lower exchange boundary:",model.exchanges[14].lower_bound)
-
-print(model.exchanges[16].name) # biomass
-model.exchanges[16].lower_bound=0
-print("New lower exchange boundary:",model.exchanges[16].lower_bound)
-print("\n")
-
-# these values will serve as default values for comparision
-print("Run FBA with new boundaries: \n")
+# the resulting FBA result will serve as the default for comparision with the conditions
+print("\nRe-running FBA with new boundaries")
+# run FBA
 def_sol = model.optimize()
+
+# retrieve value for biomass generation
 def_f=def_sol.objective_value
+
+# print summary of results
 model.summary()
-print("\n")
 
 # run parsimonious FBA (pFBA)
-print("Run pFBA: \n")
+print("\nRunning pFBA:")
 def_pfba_sol=cobra.flux_analysis.pfba(model)
 def_pfba_f = cobra.flux_analysis.pfba(model).f
 print("pFBA solution: %.2f" % def_pfba_f)
-print("\n")
 
 # extract active subnetworks and save reaction and metabolite lists
-print("\n")
 S=cobra.util.array.create_stoichiometric_matrix(model, array_type="dense", dtype=None) # get S
 
 default_active_rxns=[i for i, x in enumerate(def_pfba_sol.fluxes!=0) if x] # find index of active reactions
@@ -122,7 +146,7 @@ S_reduced_temp=S[:,default_active_rxns]
 default_active_mets=[i for i, x in enumerate(~(S_reduced_temp==0).all(1)) if x]  # remove inactive reactions and metabolites from S
 default_active_met_names=[model.metabolites[i].name for i in default_active_mets] 
 
-print("Active network size: %i metabolites %i reactions. \n" % (len(default_active_mets), len(default_active_rxns)))
+print("Active network size: %i metabolites %i reactions." % (len(default_active_mets), len(default_active_rxns)))
 
 # get default exchange fluxes
 def_ex_fluxes=def_sol.fluxes
@@ -142,20 +166,27 @@ ex_fluxes=def_ex_fluxes[['EX_cpd00001_e0',
               'EX_cpd11632_e0',
               'EX_cpd02701_c0', 
               'EX_cpd11416_c0']]
+print("Finished: 6. Changing rates of exchange and re-running FBA.")
+
+print("##########################################################\n")
           
 ### 7. read the matched metabolites and data
 ##
 #   
+print("7. Reading matched metabolomics data.")
 data = []
 with open("Matched_Metabolomics_Data.txt") as file:
     for line in file:
         list = [element.strip() for element in line.split("\t")]
         data.append(list)        
+print("Finished: 7. Reading matched metabolomics data.")
+
+print("##########################################################\n")
 
 ### 8. perform data integration
 ##
 #
-
+print("8. Integrating metabolomics data and extracting active sub-networks.")
 context_model_properties=collections.OrderedDict()
 
 threshold=1E-8 # threashold for calling a flux zero
@@ -169,7 +200,8 @@ ex_fluxes=pd.concat([ex_fluxes,zero_col],axis=1)
 for j in range(3,8): # flesh only
 
     context_model = model.copy() # make a copy of the original model
-    print("integrating metabolite data for conditon: %i \n" % (j-2))    
+    print("-------------------------------------")
+    print("Integrating metabolite data for conditon %i \n" % (j-2))    
     measured_metabolite_list=[]    
     
     for i in range(0,len(data)):    
@@ -234,7 +266,7 @@ for j in range(3,8): # flesh only
     S_reduced_temp=S[:,active_rxns]
     active_mets=[i for i, x in enumerate(~(S_reduced_temp==0).all(1)) if x] # check # remove inactive reactions and metabolites from stoichiometric matrix    
     active_met_names=[context_model.metabolites[i].name for i in active_mets] 
-    print("Active network size: %i metabolites %i reactions. \n" % (len(active_mets), len(active_rxns)))
+    print("Active network size: %i metabolites %i reactions." % (len(active_mets), len(active_rxns)))
 
     context_model_properties[context_model]={'model': context_model,
                                             'objective value':solution.f,
@@ -248,10 +280,14 @@ for j in range(3,8): # flesh only
                                             'active rxn names':active_rxn_names,
                                             'active met names':active_met_names,
                                             'exchange fluxes': exchange_fluxes}
+print("Finished: 8. Integrating metabolomics data and extracting active sub-networks.")
+
+print("##########################################################\n")
                                             
 ### 9. analyse results
 ##
 #
+print("9. Analyzing results.")
 for context_model in context_model_properties:  
   
     cm_fluxes=context_model_properties[context_model]['solution fluxes'][0:len(def_pfba_sol.fluxes)] # newly added sink fluxes are at the end
@@ -352,8 +388,8 @@ cm_2=context_model_properties[context_model_properties.keys()[1]]
 cm_1_fluxes=cm_1['solution fluxes'][0:len(def_pfba_sol.fluxes)] # newly added sink fluxes are at the end
 cm_2_fluxes=cm_2['solution fluxes'][0:len(def_pfba_sol.fluxes)] # newly added sink fluxes are at the end
 
-cm_1_all_rxns=[r for r in cm_1['model'].reactions]
-cm_2_all_rxns=[r for r in cm_2['model'].reactions]
+cm_1_all_rxns=[r.id for r in cm_1['model'].reactions]
+cm_2_all_rxns=[r.id for r in cm_2['model'].reactions]
 
 cm_1_all_rxns_names=[r.name for r in cm_1['model'].reactions]
 cm_2_all_rxns_names=[r.name for r in cm_2['model'].reactions]
@@ -364,13 +400,14 @@ diff=abs(cm_1_fluxes-cm_2_fluxes)
 order=[i[0] for i in sorted(enumerate(abs(cm_1_fluxes-cm_2_fluxes)), reverse=True, key=lambda x:x[1])]
 
 # print most changing reactions
-print("print most changing reactions:")
-print("\n")
+print("\nTop 50 reactions with highest flux difference between conditions 1 (immature green stage) and 2 (mature green stage)")
+print("---------------------------------------------------------------")
 print("Reaction ID","\t", "Reaction Name","\t","Flux 1","\t","Flux 2")
 print("---------------------------------------------------------------")
 for i in range(0,50):
-    print(cm_1_all_rxns[order[i]],"\t", cm_1_all_rxns_names[order[i]],"\t",cm_1_fluxes[order][i],"\t",cm_2_fluxes[order][i], diff[order[i]])
-print("\n")
+    print("{}\t{}\t{:.2f}\t{:.2f}\t{:.2f}".format(cm_1_all_rxns[order[i]],cm_1_all_rxns_names[order[i]],cm_1_fluxes[order][i],cm_2_fluxes[order][i],diff[order[i]]))
+print("Finished: 9. Analyzing results.")
 
+print("##########################################################\n")
 
-
+print("End of Plant_Metabolomics_Modeling.py")
