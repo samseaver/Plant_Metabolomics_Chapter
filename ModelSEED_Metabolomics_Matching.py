@@ -45,8 +45,10 @@ if(File_MIME[0] != "text/plain"):
     _help_message()
     sys.exit(1)
 
-#Read File
-Cpd_Searchnames=dict()
+#Read Names and Data from File
+Cpd_Searchnames_Dict=dict()
+Cpd_Data_Dict=dict()
+
 for line in io.open(File):
     line=line.strip()
     
@@ -55,7 +57,8 @@ for line in io.open(File):
         continue
 
     array=line.split('\t')
-    compound = array[0]
+    compound=array.pop(0)
+    data=array
 
     #Testing to see if its ascii, compound names can have strange unicode characters
     try:
@@ -63,28 +66,36 @@ for line in io.open(File):
     except UnicodeDecodeError:
         print "Warning: Compound "+compound+" has non-ascii characters"
 
-    Cpd_Searchnames[compound]=_searchname(compound)
+    Cpd_Searchnames_Dict[compound]=_searchname(compound)
+    Cpd_Data_Dict[compound]=data
+
+#Store matched compounds
+Found_Cpd_Data_Dict={}
+NotFound_Cpd_Data_Dict={}
 
 #Retrieve ModelSEEDDatabase searchnames
 MSD_Searchnames = _retrieve_ModelSEEDDatabase_searchnames()
-for cpd in Cpd_Searchnames.keys():
-    searchname = Cpd_Searchnames[cpd]
+for cpd in Cpd_Searchnames_Dict.keys():
+    searchname = Cpd_Searchnames_Dict[cpd]
 
     Found=0
     Found_String=""
     if(searchname in MSD_Searchnames):
         Found=1
         Found_String = searchname
+        Found_Cpd_Data_Dict[cpd]={'id' : MSD_Searchnames[searchname], 'searchname' : searchname, 'data' : Cpd_Data_Dict[cpd]}
 
     if(Found==0):
         #Attempt to change the searchname to find a possible common interpretation
         if(";" in cpd or "/" in cpd):
-            for split_searchname in re.split('[;/]', cpd):
-                split_searchname.strip()
+            for split_cpd in re.split('[;/]', cpd):
+                split_cpd.strip()
+                split_searchname=split_cpd
                 split_searchname = _searchname(split_searchname)
                 if(split_searchname in MSD_Searchnames):
                     Found=1
                     Found_String = split_searchname
+                    Found_Cpd_Data_Dict[cpd]={'id' : MSD_Searchnames[split_searchname], 'searchname' : split_searchname, 'data' : Cpd_Data_Dict[cpd]}
                     break
 
     if(Found==0):
@@ -94,12 +105,14 @@ for cpd in Cpd_Searchnames.keys():
             if(searchname in MSD_Searchnames):
                 Found=1
                 Found_String=searchname
+                Found_Cpd_Data_Dict[cpd]={'id' : MSD_Searchnames[searchname], 'searchname' : searchname, 'data' : Cpd_Data_Dict[cpd]}
                 
         if(searchname.endswith('icacid')):
             searchname = searchname.replace('icacid','ate')
             if(searchname in MSD_Searchnames):
                 Found=1
                 Found_String=searchname
+                Found_Cpd_Data_Dict[cpd]={'id' : MSD_Searchnames[searchname], 'searchname' : searchname, 'data' : Cpd_Data_Dict[cpd]}
 
     if(Found==0):
         #Attempt to recognize geometric isomers
@@ -108,14 +121,24 @@ for cpd in Cpd_Searchnames.keys():
             if(searchname in MSD_Searchnames):
                 Found=1
                 Found_String=searchname
+                Found_Cpd_Data_Dict[cpd]={'id' : MSD_Searchnames[searchname], 'searchname' : searchname, 'data' : Cpd_Data_Dict[cpd]}
 
         if(searchname.startswith('cis')):
             searchname = searchname.replace('cis','')
             if(searchname in MSD_Searchnames):
                 Found=1
                 Found_String=searchname
+                Found_Cpd_Data_Dict[cpd]={'id' : MSD_Searchnames[searchname], 'searchname' : searchname, 'data' : Cpd_Data_Dict[cpd]}
 
     if(Found==0):
-        print "Not Found: ",cpd,searchname
-    else:
-        print "Found: ",cpd,Found_String,MSD_Searchnames[Found_String]
+        NotFound_Cpd_Data_Dict[cpd]={'searchname' : searchname, 'data' : Cpd_Data_Dict[cpd]}
+
+file = open('Unmatched_Metabolomics_Data.txt', 'w')
+for cpd in sorted(NotFound_Cpd_Data_Dict.keys()):
+    file.write("%s \t %s\t %s \n" % (cpd, NotFound_Cpd_Data_Dict[cpd]['searchname'],'\t'.join(str(j) for j in NotFound_Cpd_Data_Dict[cpd]['data'])))
+file.close()
+
+file = open('Matched_Metabolomics_Data.txt', 'w')
+for cpd in sorted(Found_Cpd_Data_Dict.keys()):
+    file.write("%s \t %s \t %s\t %s \n" % (cpd, Found_Cpd_Data_Dict[cpd]['searchname'], Found_Cpd_Data_Dict[cpd]['id'],'\t'.join(str(j) for j in Found_Cpd_Data_Dict[cpd]['data'])))
+file.close()
