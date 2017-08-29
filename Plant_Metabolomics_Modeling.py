@@ -89,7 +89,7 @@ print("\n##########################################################\n")
 #  
 print("5. Running initial FBA.\n")
 # set solver, this can be changed to e.g. GUROBI or glpk
-model.solver = "glpk"
+model.solver = "cplex"
 
 # set objective, which is the biomass reaction
 model.optimize(new_objective=bio)
@@ -353,7 +353,7 @@ ax.yaxis.set_ticks_position('left')
 plt.xticks(x2, ['Def','','IG','MG','Br','Or','Rd'])
 plt.tick_params(axis='x',which='both',bottom='off') 
 plt.title('Maximum biomass')
-plt.xlabel('Ripening Stage')
+plt.xlabel('Developmental Stage')
 plt.ylabel('Objective value')
 fig.savefig("Biomass.svg",dpi=600)
 
@@ -372,7 +372,7 @@ ax.yaxis.set_ticks_position('left')
 plt.xticks(x2, ['Def','','IG','MG','Br','Or','Rd'])
 plt.tick_params(axis='x',which='both',bottom='off') 
 plt.title('pFBA solutions')
-plt.xlabel('Ripening Stage')
+plt.xlabel('Developmental Stage')
 plt.ylabel('Sum of fluxes')
 fig.savefig("pFBA_solutions.svg",dpi=600)
 
