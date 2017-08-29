@@ -30,7 +30,7 @@ def _process_flux_dataframe(flux_dataframe, threshold, floatfmt):
     return flux_dataframe
 print("Finished: 0. Importing modules and defining functions.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
 
 ### 1. Reading PlantSEED tomato model
 ##
@@ -39,36 +39,36 @@ print("1. Reading PlantSEED tomato model.")
 model=cobra.io.read_sbml_model("Tomato_PlantSEED_Model.sbml")
 print("Finished: 1. Reading PlantSEED tomato model.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
 
 ### 2. Printing basic model properties
 ##
 #
-print("2. Printing basic model properties.")
+print("2. Printing basic model properties.\n")
 print("Number of reactions: %i" % (len(model.reactions)))
 print("Number of metabolites: %i" % (len(model.metabolites)))
 print("Number of genes: %i" % (len(model.genes)))
-print("Finished: 2. Printing basic model properties.")
+print("\nFinished: 2. Printing basic model properties.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
 
 ### 3. Printing exchange reactions
 ##
 #
-print("3. Printing exchange reactions.")
+print("3. Printing exchange reactions.\n")
 print("---------------------------------------------------------------")
 print("Reaction ID","\t", "Reaction Name","\t","Lower Bound","\t","Upper Bound")
 print("---------------------------------------------------------------")
 for x in model.exchanges:
     print(x.id,"\t", x.name,"\t",x.lower_bound,"\t",x.upper_bound)
-print("Finished: 3. Printing exchange reactions.")
+print("\nFinished: 3. Printing exchange reactions.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
 
 ### 4. Printing biomass composition
 ##
 #   
-print("4. Printing biomass composition.")
+print("4. Printing biomass composition.\n")
 # get biomass
 bio=model.reactions.get_by_id("bio1")
 
@@ -80,14 +80,14 @@ print("Metabolite name","\t","coefficient")
 print("-------------------------------------")
 for i in range(0,len(coeffs)):
     print(bio.reactants[i].name,"\t",coeffs[i])
-print("Finished: 4. Printing biomass composition.")
+print("\nFinished: 4. Printing biomass composition.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
 
 ### 5. Running initial FBA.
 ##
 #  
-print("5. Running initial FBA.")
+print("5. Running initial FBA.\n")
 # set solver, this can be changed to e.g. GUROBI or glpk
 model.solver = "glpk"
 
@@ -99,14 +99,14 @@ sol = model.optimize()
 
 # print summary of results
 model.summary()
-print("Finished: 5. Running initial FBA.")
+print("\nFinished: 5. Running initial FBA.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
 
 ### 6.change uptakes and run FBA
 ##
 #
-print("6. Changing rates of exchange and re-running FBA.")
+print("6. Changing rates of exchange and re-running FBA.\n")
 Metabolites_to_Fix={"Urea":6,"Sucrose":11,"Light":14,"Biomass":16}
 for met in Metabolites_to_Fix.keys():
       met_index = Metabolites_to_Fix[met]
@@ -120,7 +120,7 @@ for met in Metabolites_to_Fix.keys():
           print("New lower exchange boundary for "+met+" ("+model.exchanges[met_index].name+"):",model.exchanges[met_index].lower_bound)
 
 # the resulting FBA result will serve as the default for comparision with the conditions
-print("\nRe-running FBA with new boundaries")
+print("\nRe-running FBA with new boundaries:\n")
 # run FBA
 def_sol = model.optimize()
 
@@ -131,7 +131,7 @@ def_f=def_sol.objective_value
 model.summary()
 
 # run parsimonious FBA (pFBA)
-print("\nRunning pFBA:")
+print("\nRunning pFBA:\n")
 def_pfba_sol=cobra.flux_analysis.pfba(model)
 def_pfba_f = cobra.flux_analysis.pfba(model).f
 print("pFBA solution: %.2f" % def_pfba_f)
@@ -166,9 +166,9 @@ ex_fluxes=def_ex_fluxes[['EX_cpd00001_e0',
               'EX_cpd11632_e0',
               'EX_cpd02701_c0', 
               'EX_cpd11416_c0']]
-print("Finished: 6. Changing rates of exchange and re-running FBA.")
+print("\nFinished: 6. Changing rates of exchange and re-running FBA.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
           
 ### 7. read the matched metabolites and data
 ##
@@ -181,7 +181,7 @@ with open("Matched_Metabolomics_Data.txt") as file:
         data.append(list)        
 print("Finished: 7. Reading matched metabolomics data.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
 
 ### 8. perform data integration
 ##
@@ -201,7 +201,7 @@ for j in range(3,8): # flesh only
 
     context_model = model.copy() # make a copy of the original model
     print("-------------------------------------")
-    print("Integrating metabolite data for conditon %i \n" % (j-2))    
+    print("Integrating metabolite data for conditon %i: \n" % (j-2))    
     measured_metabolite_list=[]    
     
     for i in range(0,len(data)):    
@@ -280,9 +280,9 @@ for j in range(3,8): # flesh only
                                             'active rxn names':active_rxn_names,
                                             'active met names':active_met_names,
                                             'exchange fluxes': exchange_fluxes}
-print("Finished: 8. Integrating metabolomics data and extracting active sub-networks.")
+print("\nFinished: 8. Integrating metabolomics data and extracting active sub-networks.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
                                             
 ### 9. analyse results
 ##
@@ -400,14 +400,14 @@ diff=abs(cm_1_fluxes-cm_2_fluxes)
 order=[i[0] for i in sorted(enumerate(abs(cm_1_fluxes-cm_2_fluxes)), reverse=True, key=lambda x:x[1])]
 
 # print most changing reactions
-print("\nTop 50 reactions with highest flux difference between conditions 1 (immature green stage) and 2 (mature green stage)")
+print("\nTop 50 reactions with highest flux difference between conditions 1 (immature green stage) and 2 (mature green stage):\n")
 print("---------------------------------------------------------------")
 print("Reaction ID","\t", "Reaction Name","\t","Flux 1","\t","Flux 2")
 print("---------------------------------------------------------------")
 for i in range(0,50):
     print("{}\t{}\t{:.2f}\t{:.2f}\t{:.2f}".format(cm_1_all_rxns[order[i]],cm_1_all_rxns_names[order[i]],cm_1_fluxes[order][i],cm_2_fluxes[order][i],diff[order[i]]))
-print("Finished: 9. Analyzing results.")
+print("\nFinished: 9. Analyzing results.")
 
-print("##########################################################\n")
+print("\n##########################################################\n")
 
-print("End of Plant_Metabolomics_Modeling.py")
+print("End of Plant_Metabolomics_Modeling.py\n")
